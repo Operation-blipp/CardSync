@@ -1,0 +1,35 @@
+//UserEncryptedRecord
+{
+    "APINAMN_Version":"0.1.0",//api version, semantic versioning
+    "KeyEncryptionType":"RSA2048",//så servern vet vilken typ av nyckel som användes
+    "PayloadEncryptionType":"AES_CMC",//hur vi encryptar payloaden
+    "EncryptedKey":"DataIBase64Format",
+    "EncryptedPayload":"DataIBase64Format"
+}
+//UserPayload
+{
+    "IdentificationType","PasswordHash",
+    "SendBackKey":"Base64KeyData",
+    "IdentificationData":{
+        "HashAlgorithm":"SHA256",
+        "UserName":"Hej",
+        "PasswordHash":"Base64Hash"
+    },
+    "DirectiveName":"GetLatest",
+    "DirectiveArguments":["ArgumentIBases64"]
+}
+//ServerEncryptedRecord
+{
+    "ResponseStatus":"Ok",
+    "EncryptedResponseData":"Base64Data"
+}
+//med HTTPS
+//UserPayload
+{
+    "DirectiveName":"GetLatest",
+    "DirectiveArguments":["ArgumentIBases64"]
+}
+{
+  "ResponseStatus":"Ok",
+  //beroende på datan kanse det finns mer namngivna variablar här
+}
