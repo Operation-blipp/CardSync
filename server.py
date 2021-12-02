@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify, make_response
 import sqlite3
 import os
 from datetime import datetime
+import base64
 
 CARD_SIZE = 1024
 app = Flask(__name__)
@@ -62,13 +63,37 @@ def unlockCard(user, cardUID, root):
     
     return(True, "Card unlocked")
 
+functionMatching = {
+    "getLatest" : downloadCard,
+    "uploadCard" : uploadCard,
+    "unlockCard" : unlockCard,
+}
+
 @app.route('/', methods=["GET", "POST"])
-def hello_world():
+def connection():
 
-    req = request.get_json()
-    print(req)
+    jsonPayload = request.get_json()
+    UserPayload = jsonPayload["UserPayload"]
+    directive = UserPayload["DirectiveName"]
+    DirectiveArguments = UserPayload["DirectiveArguments"]
 
-    return ('Hello World!', 200)
+    user = UserPayload["IdentificationData"]["UserName"]
+    cardUID = DirectiveArguments["cardUID"]
+    data = base64.b64decode(DirectiveArguments["data"])
+    dev = DirectiveArguments["dev"]
+    root = f"Archives/{cardUID}"
+    
+    if directive != "uploadCard":
+        returnObject = functionMatching[directive](user, cardUID, root)
+    else:
+        returnObject = functionMatching[directive](user, cardUID, data, root)
+
+    APIversion = jsonPayload["UserEncryptedRecord"]["APINAMN_Version"]
+
+    if returnObject[0]:
+        return(returnObject[1], 200)
+    else: 
+        return(returnObject[1], 400)
 
 if __name__ == "__main__":
     app.run()
@@ -76,4 +101,4 @@ if __name__ == "__main__":
     #print(downloadCard("oskhen", "C40F6C94"))
     #print(uploadCard("oskhen", "C40F6C94", b"AA"))
     #con = sqlite3.connect("database.db")
-    pass
+    
