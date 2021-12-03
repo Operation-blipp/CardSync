@@ -8,6 +8,7 @@ import base64
 import inspect
 import distutils
 
+API_VERSION = "0.1.0"
 CARD_SIZE = 1024
 DATABASE_NAME = "userdb.db"
 app = Flask(__name__)
@@ -75,31 +76,40 @@ def verifyUser(username, passhash):
     con = sqlite3.connect(DATABASE_NAME)
     cur = con.cursor()
 
-    cur.execute("SELECT username, password FROM users")
+    cur.execute("SELECT username, password FROM users WHERE username = ? AND password = ?", (username, passhash))
     users = cur.fetchall()
+    if len(users) == 1:
+        return True
+    return False
 
-    for col in users:
-        print(col, (username, passhash))
-        if col == (username, passhash):
-            return True
-
-    return True
-
+def pkcs7_unpad(text):
+    x = text[-1]
+    return text[:-x]
 
 @app.route('/', methods=["GET", "POST"])
 def connection():
 
-
+    if not request.is_json:
+        return "GTFO", 400
 
     jsonPayload = request.get_json()
+    print(jsonPayload)
+    
     UserPayload = jsonPayload["UserPayload"]
+    UserEncryptedRecord = jsonPayload["UserEncryptedRecord"]
     directive = UserPayload["DirectiveName"]
     DirectiveArguments = UserPayload["DirectiveArguments"]
 
+    if UserPayload["IdentificationType"] != "PasswordHash":
+        return "Identification Type not supported!", 400
+    
+    if UserEncryptedRecord["CardSync_Version"] != "0.1.0":
+        return "API currently only supports 0.1.0!", 400
+
     user = UserPayload["IdentificationData"]["UserName"]
-    userpass = UserPayload["IdentificationData"]["PasswordHash"]
+    passhash = UserPayload["IdentificationData"]["PasswordHash"]
    
-    if not verifyUser(user, userpass):
+    if not verifyUser(user, passhash):
         return "User not verified!", 400
 
     cardUID = DirectiveArguments["cardUID"]
