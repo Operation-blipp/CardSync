@@ -3,19 +3,38 @@
 import requests
 import json
 import base64
+import sys
+
+from requests.sessions import session
+from Crypto.Cipher import AES, PKCS1_OAEP
+from Crypto.PublicKey import RSA
+import secrets
+
+def pkcs7_pad(text, size):
+    n = size - (len(text) % size)
+    text += str(n) * n
+    text = text.encode('utf-8')
+    print(text)
+    return text
+    
+session_key = secrets.token_bytes(28)
+server_key = RSA.import_key(open("mykey.pem").read())
+cipher_rsa = PKCS1_OAEP.new(server_key)
+
+enc_session_key = cipher_rsa.encrypt(session_key)
+
+#nonce 12 bytes
+#keysize 16 bytes
+
+
+directive = str(sys.argv[1])
+print(directive)
+
 
 url = "http://127.0.0.1:5000/"
 
 headers = {
     "Content-Type": "application/json"
-}
-
-UserEncryptedRecord = {
-    "APINAMN_Version":"0.1.0",
-    "KeyEncryptionType":"RSA2048",
-    "PayloadEncryptionType":"AES_CMC",
-    "EncryptedKey":"DataIBase64Format",
-    "EncryptedPayload":"DataIBase64Format"
 }
 
 cardUID = "C40F6C94"
@@ -24,7 +43,6 @@ print(cardData)
     
 
 DirectiveArguments = {
-    "user" : "oskhen", 
     "cardUID" : cardUID, 
     "data" : cardData,
     "dev" : "False"
@@ -36,16 +54,26 @@ UserPayload = {
     "IdentificationData":{
         "HashAlgorithm":"SHA256",
         "UserName":"oskhen",
-        "PasswordHash":"Base64Hash"
+        "PasswordHash": "312433c28349f63c4f387953ff337046e794bea0f9b9ebfcb08e90046ded9c76"
     },
-    "DirectiveName":"uploadCard",
+    "DirectiveName":directive,
     "DirectiveArguments":DirectiveArguments
 }
 
-data = {
-    "UserEncryptedRecord" : UserEncryptedRecord,
-    "UserPayload" : UserPayload
+userpayloaddata = json.dumps(UserPayload)
+cipher_aes = AES.new(session_key[:16], AES.MODE_CBC)
+ct_bytes = cipher_aes.encrypt(pkcs7_pad(userpayloaddata, AES.block_size))
+cipher_aes.iv = session_key[16:]
+#ciphertext = base64.b64encode(ct_bytes).decode('utf-8')
+
+
+UserEncryptedRecord = {
+    "CardSync_Version":"0.1.0",
+    "KeyEncryptionType":"RSA2048",
+    "PayloadEncryptionType":"AES_GCM_16_12",
+    "EncryptedKey": base64.b64encode(enc_session_key).decode('utf-8'),
+    "EncryptedPayload": base64.b64encode(ct_bytes).decode('utf-8')
 }
 
-r = requests.post(url, headers=headers, data=json.dumps(data))
+r = requests.post(url, headers=headers, data=json.dumps(UserEncryptedRecord))
 print(f"{r} - {r.text}")
