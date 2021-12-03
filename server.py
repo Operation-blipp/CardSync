@@ -9,6 +9,7 @@ import inspect
 import distutils
 
 CARD_SIZE = 1024
+DATABASE_NAME = "userdb.db"
 app = Flask(__name__)
 
 def downloadCard(user, cardUID, root):
@@ -71,7 +72,7 @@ functionMatching = {
 }
 
 def verifyUser(username, passhash):
-    con = sqlite3.connect('userdb.db')
+    con = sqlite3.connect(DATABASE_NAME)
     cur = con.cursor()
 
     cur.execute("SELECT username, password FROM users")
@@ -121,7 +122,7 @@ def connection():
         return(returnObject[1], 400)
 
 def dbtest():
-    con = sqlite3.connect('userdb.db')
+    con = sqlite3.connect(DATABASE_NAME)
     cur = con.cursor()
     cur.execute('''
     CREATE TABLE users
