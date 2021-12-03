@@ -70,8 +70,25 @@ functionMatching = {
     "unlockCard" : unlockCard,
 }
 
+def verifyUser(username, passhash):
+    con = sqlite3.connect('userdb.db')
+    cur = con.cursor()
+
+    cur.execute("SELECT username, password FROM users")
+    users = cur.fetchall()
+
+    for col in users:
+        print(col, (username, passhash))
+        if col == (username, passhash):
+            return True
+
+    return True
+
+
 @app.route('/', methods=["GET", "POST"])
 def connection():
+
+
 
     jsonPayload = request.get_json()
     UserPayload = jsonPayload["UserPayload"]
@@ -79,6 +96,11 @@ def connection():
     DirectiveArguments = UserPayload["DirectiveArguments"]
 
     user = UserPayload["IdentificationData"]["UserName"]
+    userpass = UserPayload["IdentificationData"]["PasswordHash"]
+   
+    if not verifyUser(user, userpass):
+        return "User not verified!", 400
+
     cardUID = DirectiveArguments["cardUID"]
     data = base64.b64decode(DirectiveArguments["data"])
     dev = DirectiveArguments["dev"]
@@ -98,7 +120,20 @@ def connection():
     else: 
         return(returnObject[1], 400)
 
+def dbtest():
+    con = sqlite3.connect('userdb.db')
+    cur = con.cursor()
+    cur.execute('''
+    CREATE TABLE users
+    (username text, password text)
+    ''')
+    cur.execute("INSERT INTO users VALUES ('oskhen', 'asdf1234')")
+    con.commit()
+    con.close()
+
+
 if __name__ == "__main__":
+    #dbtest()
     app.run()
     #root = f"Archives/{cardUID}"
     #print(downloadCard("oskhen", "C40F6C94"))
