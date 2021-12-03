@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-import re
 from flask import Flask, request, jsonify, make_response
 import sqlite3
 import os
 from datetime import datetime
 import base64
+import inspect
+import distutils
 
 CARD_SIZE = 1024
 app = Flask(__name__)
@@ -81,15 +82,17 @@ def connection():
     cardUID = DirectiveArguments["cardUID"]
     data = base64.b64decode(DirectiveArguments["data"])
     dev = DirectiveArguments["dev"]
-    root = f"Archives/{cardUID}"
-    
-    if directive != "uploadCard":
-        returnObject = functionMatching[directive](user, cardUID, root)
+    if dev == "True":
+        root = f"Archives/dev/{cardUID}"
     else:
-        returnObject = functionMatching[directive](user, cardUID, data, root)
+        root = f"Archives/{cardUID}"
 
-    APIversion = jsonPayload["UserEncryptedRecord"]["APINAMN_Version"]
-
+    l = locals()
+    func = functionMatching[directive]
+    args = [l[x] for x in list(inspect.signature(func).parameters.keys())]
+    
+    returnObject = func(*args)
+    
     if returnObject[0]:
         return(returnObject[1], 200)
     else: 
