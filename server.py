@@ -108,8 +108,6 @@ def decryptPayload(encryptedKey, encryptedPayload):
     data = aesKey.decrypt(base64.b64decode(encryptedPayload))
     formatted = json.loads(pkcs7_unpad(data).decode('utf-8'))
     return formatted
-    
-
 
 
 @app.route('/', methods=["GET", "POST"])
@@ -176,10 +174,24 @@ def dbtest():
     con.commit()
     con.close()
 
+def loadConfig(filepath):
+    
+    configData = dict()
+    with open(filepath, "r").readlines() as configFile:
+        for line in configFile:
+            lineData = line.split(": ")
+            configData[lineData[0]] = lineData[-1]
+    
+    return configData
+
+        
+
+
 
 if __name__ == "__main__":
+    config = loadConfig("config.conf")
     #dbtest()
-    app.run()
+    app.run(host="localhost", port=8000, debug=True)
     #root = f"Archives/{cardUID}"
     #print(downloadCard("oskhen", "C40F6C94"))
     #print(uploadCard("oskhen", "C40F6C94", b"AA"))
