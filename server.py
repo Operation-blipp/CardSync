@@ -6,11 +6,15 @@ import os
 from datetime import datetime
 import base64
 import inspect
-import distutils
+from Crypto.Cipher import AES, PKCS1_OAEP
+from Crypto.PublicKey import RSA
+from requests.sessions import session
+import json
 
 API_VERSION = "0.1.0"
 CARD_SIZE = 1024
 DATABASE_NAME = "userdb.db"
+RSA_KEY_PATH = "mykey.pem" 
 app = Flask(__name__)
 
 def downloadCard(user, cardUID, root):
@@ -72,6 +76,12 @@ functionMatching = {
     "unlockCard" : unlockCard,
 }
 
+expectedUserRecord = {
+    "CardSync_Version" : "0.1.0",
+    "KeyEncryptionType" : "RSA2048",
+    "PayloadEncryptionType" : "AES_GCM_16_12"
+}
+
 def verifyUser(username, passhash):
     con = sqlite3.connect(DATABASE_NAME)
     cur = con.cursor()
@@ -83,8 +93,24 @@ def verifyUser(username, passhash):
     return False
 
 def pkcs7_unpad(text):
-    x = text[-1]
+    x = int(text[-1:])
     return text[:-x]
+
+def decryptPayload(encryptedKey, encryptedPayload):
+    
+    serverKey = RSA.import_key(open(RSA_KEY_PATH).read())
+    rsaKey = PKCS1_OAEP.new(serverKey)
+    sessionKey = rsaKey.decrypt(base64.b64decode(encryptedKey))
+    IV = sessionKey[16:]
+    sessionKey = sessionKey[:16]
+
+    aesKey = AES.new(sessionKey, AES.MODE_CBC, IV)
+    data = aesKey.decrypt(base64.b64decode(encryptedPayload))
+    formatted = json.loads(pkcs7_unpad(data).decode('utf-8'))
+    return formatted
+    
+
+
 
 @app.route('/', methods=["GET", "POST"])
 def connection():
@@ -93,18 +119,26 @@ def connection():
         return "GTFO", 400
 
     jsonPayload = request.get_json()
-    print(jsonPayload)
-    
-    UserPayload = jsonPayload["UserPayload"]
-    UserEncryptedRecord = jsonPayload["UserEncryptedRecord"]
+
+    #UserEncryptedRecord = jsonPayload["UserEncryptedRecord"]
+
+    for item in jsonPayload:
+        if item in expectedUserRecord:
+            if jsonPayload[item] != expectedUserRecord[item]:
+                return "Unexpected header data encountered", 400
+
+    if jsonPayload["PayloadEncryptionType"] == "AES_GCM_16_12":
+        UserPayload = decryptPayload(jsonPayload["EncryptedKey"], jsonPayload["EncryptedPayload"])
+    else:
+        return "Encryption type not supported!", 400
+
     directive = UserPayload["DirectiveName"]
     DirectiveArguments = UserPayload["DirectiveArguments"]
 
     if UserPayload["IdentificationType"] != "PasswordHash":
         return "Identification Type not supported!", 400
     
-    if UserEncryptedRecord["CardSync_Version"] != "0.1.0":
-        return "API currently only supports 0.1.0!", 400
+
 
     user = UserPayload["IdentificationData"]["UserName"]
     passhash = UserPayload["IdentificationData"]["PasswordHash"]
