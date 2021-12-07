@@ -148,6 +148,9 @@ def connection():
     if directive == "Login":
         return "User successfully verified!", 200
 
+
+    #|--- Directive handling
+    l = locals()
     cardUID = DirectiveArguments["cardUID"]
     data = base64.b64decode(DirectiveArguments["data"])
     dev = DirectiveArguments["dev"]
@@ -156,7 +159,7 @@ def connection():
     else:
         root = f"Archives/{cardUID}"
 
-    l = locals()
+    
     func = functionMatching[directive]
     args = [l[x] for x in list(inspect.signature(func).parameters.keys())]
     
@@ -166,17 +169,6 @@ def connection():
         return(returnObject[1], 200)
     else: 
         return(returnObject[1], 400)
-
-def dbtest():
-    con = sqlite3.connect(DATABASE_NAME)
-    cur = con.cursor()
-    cur.execute('''
-    CREATE TABLE users
-    (username text, password text)
-    ''')
-    cur.execute("INSERT INTO users VALUES ('oskhen', 'asdf1234')")
-    con.commit()
-    con.close()
 
 def loadConfig(filepath):
     
