@@ -181,10 +181,13 @@ def dbtest():
 def loadConfig(filepath):
     
     configData = dict()
-    with open(filepath, "r").readlines() as configFile:
-        for line in configFile:
-            lineData = line.split(": ")
-            configData[lineData[0]] = lineData[-1]
+    with open(filepath, "r") as configFile:
+        
+        for line in configFile.readlines():
+            if line[0] == '#':
+                continue
+            lineData = line.split(" = ")
+            configData[lineData[0]] = lineData[-1].strip("\n")
     
     return configData
 
@@ -194,8 +197,9 @@ def loadConfig(filepath):
 
 if __name__ == "__main__":
     config = loadConfig("config.conf")
+    print(config)
     #dbtest()
-    app.run(host="localhost", port=8000, debug=True)
+    app.run(host=config["HOST"], port=int(config["PORT"]), debug=True)
     #root = f"Archives/{cardUID}"
     #print(downloadCard("oskhen", "C40F6C94"))
     #print(uploadCard("oskhen", "C40F6C94", b"AA"))

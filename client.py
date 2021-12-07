@@ -14,18 +14,14 @@ def pkcs7_pad(text, size):
     n = size - (len(text) % size)
     text += str(n) * n
     text = text.encode('utf-8')
-    print(text)
     return text
     
-session_key = secrets.token_bytes(28)
+session_key = secrets.token_bytes(16)
 server_key = RSA.import_key(open("mykey.pem").read())
 cipher_rsa = PKCS1_OAEP.new(server_key)
 
-enc_session_key = cipher_rsa.encrypt(session_key)
-
-#nonce 12 bytes
 #keysize 16 bytes
-
+#nonce 12 bytes     
 
 directive = str(sys.argv[1])
 print(directive)
@@ -62,10 +58,15 @@ UserPayload = {
 
 userpayloaddata = json.dumps(UserPayload)
 cipher_aes = AES.new(session_key[:16], AES.MODE_CBC)
+#cipher_aes.iv = session_key[16:]
 ct_bytes = cipher_aes.encrypt(pkcs7_pad(userpayloaddata, AES.block_size))
-cipher_aes.iv = session_key[16:]
+
+#print(f"IV: {cipher_aes.iv}, nonce: {session_key}")
 #ciphertext = base64.b64encode(ct_bytes).decode('utf-8')
 
+session_key += cipher_aes.iv
+
+enc_session_key = cipher_rsa.encrypt(session_key)
 
 UserEncryptedRecord = {
     "CardSync_Version":"0.1.0",
@@ -77,3 +78,7 @@ UserEncryptedRecord = {
 
 r = requests.post(url, headers=headers, data=json.dumps(UserEncryptedRecord))
 print(f"{r} - {r.text}")
+
+#print(base64.b64encode(ct_bytes).decode('utf-8'))
+#test_aes = AES.new(session_key[:16], AES.MODE_CBC, cipher_aes.iv)
+#print(test_aes.decrypt(ct_bytes))
