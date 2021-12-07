@@ -1,6 +1,6 @@
 
 
-```json
+```
 UserEncryptedRecord = {
     "CardSync_Version": String - Version string, Current version: "0.1.0"
     "PayloadEncryptionType": enum describing symmetric key cipher used in encrypting payload. Currently supported ciphers: AES_CBC_16_16
@@ -9,7 +9,7 @@ UserEncryptedRecord = {
     "EncryptedPayload": Base64-encoded "UserPayload" encrypted with the chosen symmetric cipher and key. 
 }
 ```
-```json
+```
 UserPayload = {
     "IdentificationType": String - Signifies the type of identification used to verify the user. Currently supported: "PasswordHash"
     "IdentificationData": Object with structure corresponding to the identification type. 
@@ -17,7 +17,7 @@ UserPayload = {
     ... additional fields depending on DirectiveName
 }
 ```
-```json
+```
 identificationdata_PasswordHash = {
     "HashAlgorithm": String - Signifies the hash algorithm used. Currenlty supported algorithms: "SHA256"
     "UserName": String - Username string
@@ -32,19 +32,19 @@ Login:
     -
 
 Verifies login with provided identifications. Doesn't include additional fields.
-```json
+```
 uploadCard:
     "CardData": Base64 encoded card data. 
     "Namespace": String - Optional namespace flag. Defaults to no namespace.
 ```
 Uploads card to server.
-```json
+```
 getLatest:
     "CardUID": String - Hex-encoded Card UID.  
     "Namespace": String - Optional namespace flag. Defaults to no namespace.
 ```
 Downloads card from server.
-```json
+```
 unlockCard:
     "CardUID": String - Hex-encoded Card UID.
     "Namespace": String - Optional namespace flag. Defaults to no namespace.
