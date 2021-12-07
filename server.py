@@ -70,6 +70,7 @@ def unlockCard(user, cardUID, root):
     
     return(True, "Card unlocked")
 
+
 functionMatching = {
     "getLatest" : downloadCard,
     "uploadCard" : uploadCard,
@@ -143,6 +144,9 @@ def connection():
    
     if not verifyUser(user, passhash):
         return "User not verified!", 400
+
+    if directive == "Login":
+        return "User successfully verified!", 200
 
     cardUID = DirectiveArguments["cardUID"]
     data = base64.b64decode(DirectiveArguments["data"])
