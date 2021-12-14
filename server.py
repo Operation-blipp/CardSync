@@ -80,7 +80,7 @@ functionMatching = {
 expectedUserRecord = {
     "CardSync_Version" : "0.1.0",
     "KeyEncryptionType" : "RSA2048",
-    "PayloadEncryptionType" : "AES_GCM_16_12"
+    "PayloadEncryptionType" : "AES_GCM_16_16"
 }
 
 def verifyUser(username, passhash):
@@ -126,7 +126,7 @@ def connection():
             if jsonPayload[item] != expectedUserRecord[item]:
                 return "Unexpected header data encountered", 400
 
-    if jsonPayload["PayloadEncryptionType"] == "AES_GCM_16_12":
+    if jsonPayload["PayloadEncryptionType"] == "AES_GCM_16_16":
         UserPayload = decryptPayload(jsonPayload["EncryptedKey"], jsonPayload["EncryptedPayload"])
     else:
         return "Encryption type not supported!", 400

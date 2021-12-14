@@ -59,6 +59,7 @@ UserPayload = {
 userpayloaddata = json.dumps(UserPayload)
 cipher_aes = AES.new(session_key[:16], AES.MODE_CBC)
 #cipher_aes.iv = session_key[16:]
+print(AES.block_size)
 ct_bytes = cipher_aes.encrypt(pkcs7_pad(userpayloaddata, AES.block_size))
 
 #print(f"IV: {cipher_aes.iv}, nonce: {session_key}")
@@ -71,7 +72,7 @@ enc_session_key = cipher_rsa.encrypt(session_key)
 UserEncryptedRecord = {
     "CardSync_Version":"0.1.0",
     "KeyEncryptionType":"RSA2048",
-    "PayloadEncryptionType":"AES_GCM_16_12",
+    "PayloadEncryptionType":"AES_GCM_16_16",
     "EncryptedKey": base64.b64encode(enc_session_key).decode('utf-8'),
     "EncryptedPayload": base64.b64encode(ct_bytes).decode('utf-8')
 }
