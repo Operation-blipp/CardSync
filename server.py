@@ -80,7 +80,7 @@ functionMatching = {
 expectedUserRecord = {
     "CardSync_Version" : "0.1.0",
     "KeyEncryptionType" : "RSA2048",
-    "PayloadEncryptionType" : "AES_GCM_16_16"
+    "PayloadEncryptionType" : "AES_CBC_16_16"
 }
 
 def verifyUser(username, passhash):
