@@ -94,7 +94,8 @@ def verifyUser(username, passhash):
     return False
 
 def pkcs7_unpad(text):
-    x = int(text[-1:])
+    x = (text[-1:])
+    x = ord(x)
     return text[:-x]
 
 def decryptPayload(encryptedKey, encryptedPayload):
@@ -102,6 +103,7 @@ def decryptPayload(encryptedKey, encryptedPayload):
     serverKey = RSA.import_key(open(RSA_KEY_PATH).read())
     rsaKey = PKCS1_OAEP.new(serverKey)
     sessionKey = rsaKey.decrypt(base64.b64decode(encryptedKey))
+    print(encryptedKey, len(encryptedKey))
     IV = sessionKey[16:]
     sessionKey = sessionKey[:16]
 
@@ -120,6 +122,8 @@ def connection():
     jsonPayload = request.get_json()
 
     #UserEncryptedRecord = jsonPayload["UserEncryptedRecord"]
+
+    print(jsonPayload)
 
     for item in jsonPayload:
         if item in expectedUserRecord:
