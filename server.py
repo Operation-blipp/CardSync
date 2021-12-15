@@ -126,7 +126,7 @@ def connection():
             if jsonPayload[item] != expectedUserRecord[item]:
                 return "Unexpected header data encountered", 400
 
-    if jsonPayload["PayloadEncryptionType"] == "AES_GCM_16_16":
+    if jsonPayload["PayloadEncryptionType"] == expectedUserRecord["PayloadEncryptionType"]:
         UserPayload = decryptPayload(jsonPayload["EncryptedKey"], jsonPayload["EncryptedPayload"])
     else:
         return "Encryption type not supported!", 400
