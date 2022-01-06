@@ -1,0 +1,5 @@
+wheel
+flask
+requests
+pycryptodomex
+gunicorn

@@ -15,6 +15,9 @@ API_VERSION = "0.1.0"
 CARD_SIZE = 1024
 DATABASE_NAME = "userdb.db"
 RSA_KEY_PATH = "mykey.pem" 
+HOST = "0.0.0.0"
+PORT = 5000
+
 app = Flask(__name__)
 
 def downloadCard(user, cardUID, root):
@@ -173,6 +176,7 @@ def connection():
         return(returnObject[1], 200)
     else: 
         return(returnObject[1], 400)
+    
 
 def loadConfig(filepath):
     
@@ -182,22 +186,40 @@ def loadConfig(filepath):
         for line in configFile.readlines():
             if line[0] == '#':
                 continue
+            if " = " not in line:
+                continue
             lineData = line.split(" = ")
             configData[lineData[0]] = lineData[-1].strip("\n")
     
     return configData
 
-        
 
+def create_app(config_path="settings.cfg"):
 
+    global app
+
+    global CARD_SIZE
+    global DATABASE_NAME
+    global RSA_KEY_PATH
+    global HOST
+    global PORT
+
+    config = loadConfig(config_path)
+    CARD_SIZE = int(config["CARD_SIZE"])
+    DATABASE_NAME = config["DATABASE_NAME"]
+    RSA_KEY_PATH = config["RSA_KEY_PATH"]
+    HOST = config["HOST"]
+    PORT = int(config["PORT"])
+
+    return app
+    
 
 if __name__ == "__main__":
-    config = loadConfig("config.conf")
-    print(config)
-    #dbtest()
-    app.run(host=config["HOST"], port=int(config["PORT"]), debug=True)
+
+    app = create_app()
+    
+    app.run(host=HOST, port=PORT, debug=True)
     #root = f"Archives/{cardUID}"
     #print(downloadCard("oskhen", "C40F6C94"))
     #print(uploadCard("oskhen", "C40F6C94", b"AA"))
     #con = sqlite3.connect("database.db")
-    
