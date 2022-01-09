@@ -96,6 +96,12 @@ def verifyUser(username, passhash):
         return True
     return False
 
+def pkcs7_pad(text, size):
+    n = size - (len(text) % size)
+    text += chr(n) * n
+    text = text.encode('utf-8')
+    return text
+
 def pkcs7_unpad(text):
     x = (text[-1:])
     x = ord(x)
@@ -106,7 +112,7 @@ def decryptPayload(encryptedKey, encryptedPayload):
     serverKey = RSA.import_key(open(RSA_KEY_PATH).read())
     rsaKey = PKCS1_OAEP.new(serverKey)
     sessionKey = rsaKey.decrypt(base64.b64decode(encryptedKey))
-    print(encryptedKey, len(encryptedKey))
+    #print(encryptedKey, len(encryptedKey))
     IV = sessionKey[16:]
     sessionKey = sessionKey[:16]
 
@@ -114,7 +120,40 @@ def decryptPayload(encryptedKey, encryptedPayload):
     data = aesKey.decrypt(base64.b64decode(encryptedPayload))
     unpad = pkcs7_unpad(data)
     formatted = json.loads(unpad.decode('utf-8'))
+    print(formatted)
     return formatted
+
+def encryptPayload(encryptedKey, userPayload):
+
+    userPayloadData = json.dumps(userPayload)
+
+    serverKey = RSA.import_key(open(RSA_KEY_PATH).read())
+    rsaKey = PKCS1_OAEP.new(serverKey)
+    sessionKey = rsaKey.decrypt(base64.b64decode(encryptedKey))
+
+    IV = sessionKey[16:]
+    sessionKey = sessionKey[:16]
+
+    aesKey = AES.new(sessionKey, AES.MODE_CBC, IV)
+
+    encryptedData = aesKey.encrypt(pkcs7_pad(userPayloadData, AES.block_size))
+
+    return base64.b64encode(encryptedData).decode('utf-8')
+
+
+def returnPayload(jsonPayload, returnData):
+
+    returnPayload = {
+        "ReturnCode" : returnData[1],
+        "ReturnMessage" : returnData[0],
+    }
+
+    encryptedPayload = encryptPayload(jsonPayload["EncryptedKey"], returnPayload)
+
+    jsonPayload["EncryptedPayload"] = encryptedPayload
+
+    return jsonPayload
+
 
 
 @app.route('/', methods=["GET", "POST"])
@@ -154,6 +193,7 @@ def connection():
         return "User not verified!", 400
 
     if directive == "Login":
+        return returnPayload(jsonPayload, ("User successfully verified!", 200))
         return "User successfully verified!", 200
 
 

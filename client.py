@@ -10,11 +10,34 @@ from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 import secrets
 
+RSA_KEY_PATH = "mykey.pem" 
+
 def pkcs7_pad(text, size):
     n = size - (len(text) % size)
     text += chr(n) * n
     text = text.encode('utf-8')
     return text
+
+def pkcs7_unpad(text):
+    x = (text[-1:])
+    x = ord(x)
+    return text[:-x]
+
+def decryptPayload(encryptedKey, encryptedPayload):
+    
+    serverKey = RSA.import_key(open(RSA_KEY_PATH).read())
+    rsaKey = PKCS1_OAEP.new(serverKey)
+    sessionKey = rsaKey.decrypt(base64.b64decode(encryptedKey))
+    #print(encryptedKey, len(encryptedKey))
+    IV = sessionKey[16:]
+    sessionKey = sessionKey[:16]
+
+    aesKey = AES.new(sessionKey, AES.MODE_CBC, IV)
+    data = aesKey.decrypt(base64.b64decode(encryptedPayload))
+    unpad = pkcs7_unpad(data)
+    formatted = json.loads(unpad.decode('utf-8'))
+
+    return formatted
     
 session_key = secrets.token_bytes(16)
 server_key = RSA.import_key(open("mykey.pem").read())
@@ -59,7 +82,7 @@ UserPayload = {
 userpayloaddata = json.dumps(UserPayload)
 cipher_aes = AES.new(session_key[:16], AES.MODE_CBC)
 #cipher_aes.iv = session_key[16:]
-print(AES.block_size)
+#print(AES.block_size)
 ct_bytes = cipher_aes.encrypt(pkcs7_pad(userpayloaddata, AES.block_size))
 
 #print(f"IV: {cipher_aes.iv}, nonce: {session_key}")
@@ -78,7 +101,12 @@ UserEncryptedRecord = {
 }
 
 r = requests.post(url, headers=headers, data=json.dumps(UserEncryptedRecord))
-print(f"{r} - {r.text}")
+
+response = json.loads(r.text)
+
+responsePayload = decryptPayload(response["EncryptedKey"], response["EncryptedPayload"])
+
+print(f"{r} - {r.text} - {responsePayload}")
 
 #print(base64.b64encode(ct_bytes).decode('utf-8'))
 #test_aes = AES.new(session_key[:16], AES.MODE_CBC, cipher_aes.iv)
