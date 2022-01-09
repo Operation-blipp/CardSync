@@ -14,7 +14,7 @@ UserPayload = {
     "IdentificationType": String - Signifies the type of identification used to verify the user. Currently supported: "PasswordHash"
     "IdentificationData": Object with structure corresponding to the identification type. 
     "DirectiveName": String - Signifies the directive to be executed. Currenlty supported directives: getLatest, uploadCard, unlockCard, Login.
-    ... additional fields depending on DirectiveName
+    "DirectiveArguments": Object with structure corresponding to the DirectiveName
 }
 ```
 ```
@@ -22,6 +22,20 @@ identificationdata_PasswordHash = {
     "HashAlgorithm": String - Signifies the hash algorithm used. Currenlty supported algorithms: "SHA256"
     "UserName": String - Username string
     "PasswordHash": String - hex-encoded hash of the password.
+}
+```
+
+```
+ServerEncryptedRecord = {
+  "EncryptionStatus" : String - Status of Encryption. "OK" or some error message.
+  "EncryptedPayload" : Base64-encoded "ServerPayload" encrypted with the chosen symmetric cipher and key. 
+}
+```
+
+```
+ServerPayload = {
+    "StatusCode": String - Statusmessage. "OK" or some error message.
+    "DirectiveResponse": Object with structure corresponding to the Directive
 }
 ```
 
