@@ -141,10 +141,10 @@ def encryptPayload(encryptedKey, userPayload):
     return base64.b64encode(encryptedData).decode('utf-8')
 
 
-def returnPayload(encryptedKey, statusCode, directiveResponse=""):
+def returnPayload(encryptedKey, statusCode, directiveResponse=dict()):
 
     ServerEncryptedRecord = {
-        "EncryptionStatus" : "OK",
+        "EncryptionStatus" : "Ok",
         "EncryptedPayload" : "",
     }
 
@@ -173,38 +173,30 @@ def connection():
 
     print(jsonPayload)
 
-    for item in jsonPayload:
-        if item in expectedUserRecord:
-            if jsonPayload[item] != expectedUserRecord[item]:
-                return json.dumps({
-                        "EncryptionStatus" : "Unexpected header data encountered",
-                        "EncryptedPayload" : "",
-                })
-
     encryptedKey = jsonPayload["EncryptedKey"]
 
     if jsonPayload["PayloadEncryptionType"] == expectedUserRecord["PayloadEncryptionType"]:
         UserPayload = decryptPayload(encryptedKey, jsonPayload["EncryptedPayload"])
     else:
         return json.dumps({
-            "EncryptionStatus" : "Encryption type not supported!",
-            "EncryptedPayload" : "",
+            "EncryptionStatus" : "InvalidPayloadEncryptionType",
+            "EncryptedPayload" : dict(),
         })
 
     directive = UserPayload["DirectiveName"]
     DirectiveArguments = UserPayload["DirectiveArguments"]
 
     if UserPayload["IdentificationType"] != "PasswordHash":
-        return returnPayload(encryptedKey, "Identification Type not supported!")
+        return returnPayload(encryptedKey, "InvalidIdentificationType")
 
     user = UserPayload["IdentificationData"]["UserName"]
     passhash = UserPayload["IdentificationData"]["PasswordHash"]
    
     if not verifyUser(user, passhash):
-        return returnPayload(encryptedKey, "User not verified!")
+        return returnPayload(encryptedKey, "InvalidCredentials")
 
     if directive == "Login":
-        return returnPayload(encryptedKey, "User succesfully verified!")
+        return returnPayload(encryptedKey, "Ok")
 
     #|--- Directive handling
     l = locals()
