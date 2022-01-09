@@ -12,7 +12,7 @@ import secrets
 
 def pkcs7_pad(text, size):
     n = size - (len(text) % size)
-    text += str(n) * n
+    text += chr(n) * n
     text = text.encode('utf-8')
     return text
     
@@ -27,7 +27,8 @@ directive = str(sys.argv[1])
 print(directive)
 
 
-url = "http://127.0.0.1:5000/"
+#url = "http://127.0.0.1:5000/"
+url = "http://192.168.1.131:5000/"
 
 headers = {
     "Content-Type": "application/json"
@@ -46,7 +47,6 @@ DirectiveArguments = {
 
 UserPayload = {
     "IdentificationType":"PasswordHash",
-    "SendBackKey":"Base64KeyData",
     "IdentificationData":{
         "HashAlgorithm":"SHA256",
         "UserName":"oskhen",
@@ -72,7 +72,7 @@ enc_session_key = cipher_rsa.encrypt(session_key)
 UserEncryptedRecord = {
     "CardSync_Version":"0.1.0",
     "KeyEncryptionType":"RSA2048",
-    "PayloadEncryptionType":"AES_GCM_16_16",
+    "PayloadEncryptionType":"AES_CBC_16_16",
     "EncryptedKey": base64.b64encode(enc_session_key).decode('utf-8'),
     "EncryptedPayload": base64.b64encode(ct_bytes).decode('utf-8')
 }

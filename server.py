@@ -112,7 +112,8 @@ def decryptPayload(encryptedKey, encryptedPayload):
 
     aesKey = AES.new(sessionKey, AES.MODE_CBC, IV)
     data = aesKey.decrypt(base64.b64decode(encryptedPayload))
-    formatted = json.loads(pkcs7_unpad(data).decode('utf-8'))
+    unpad = pkcs7_unpad(data)
+    formatted = json.loads(unpad.decode('utf-8'))
     return formatted
 
 
