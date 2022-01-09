@@ -141,18 +141,23 @@ def encryptPayload(encryptedKey, userPayload):
     return base64.b64encode(encryptedData).decode('utf-8')
 
 
-def returnPayload(jsonPayload, returnData):
+def returnPayload(encryptedKey, statusCode, directiveResponse=""):
 
-    returnPayload = {
-        "ReturnCode" : returnData[1],
-        "ReturnMessage" : returnData[0],
+    ServerEncryptedRecord = {
+        "EncryptionStatus" : "OK",
+        "EncryptedPayload" : "",
     }
 
-    encryptedPayload = encryptPayload(jsonPayload["EncryptedKey"], returnPayload)
+    ServerPayload = {
+        "StatusCode" : statusCode,
+        "DirectiveResponse" : directiveResponse,
+    }
 
-    jsonPayload["EncryptedPayload"] = encryptedPayload
+    encryptedPayload = encryptPayload(encryptedKey, ServerPayload)
 
-    return jsonPayload
+    ServerEncryptedRecord["EncryptedPayload"] = encryptedPayload
+
+    return ServerEncryptedRecord
 
 
 
@@ -171,31 +176,35 @@ def connection():
     for item in jsonPayload:
         if item in expectedUserRecord:
             if jsonPayload[item] != expectedUserRecord[item]:
-                return "Unexpected header data encountered", 400
+                return json.dumps({
+                        "EncryptionStatus" : "Unexpected header data encountered",
+                        "EncryptedPayload" : "",
+                })
+
+    encryptedKey = jsonPayload["EncryptedKey"]
 
     if jsonPayload["PayloadEncryptionType"] == expectedUserRecord["PayloadEncryptionType"]:
-        UserPayload = decryptPayload(jsonPayload["EncryptedKey"], jsonPayload["EncryptedPayload"])
+        UserPayload = decryptPayload(encryptedKey, jsonPayload["EncryptedPayload"])
     else:
-        return "Encryption type not supported!", 400
+        return json.dumps({
+            "EncryptionStatus" : "Encryption type not supported!",
+            "EncryptedPayload" : "",
+        })
 
     directive = UserPayload["DirectiveName"]
     DirectiveArguments = UserPayload["DirectiveArguments"]
 
     if UserPayload["IdentificationType"] != "PasswordHash":
-        return "Identification Type not supported!", 400
-    
-
+        return returnPayload(encryptedKey, "Identification Type not supported!")
 
     user = UserPayload["IdentificationData"]["UserName"]
     passhash = UserPayload["IdentificationData"]["PasswordHash"]
    
     if not verifyUser(user, passhash):
-        return "User not verified!", 400
+        return returnPayload(encryptedKey, "User not verified!")
 
     if directive == "Login":
-        return returnPayload(jsonPayload, ("User successfully verified!", 200))
-        return "User successfully verified!", 200
-
+        return returnPayload(encryptedKey, "User succesfully verified!")
 
     #|--- Directive handling
     l = locals()
@@ -212,6 +221,8 @@ def connection():
     args = [l[x] for x in list(inspect.signature(func).parameters.keys())]
     
     returnObject = func(*args)
+
+    print(returnObject)
     
     if returnObject[0]:
         return(returnObject[1], 200)

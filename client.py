@@ -104,7 +104,7 @@ r = requests.post(url, headers=headers, data=json.dumps(UserEncryptedRecord))
 
 response = json.loads(r.text)
 
-responsePayload = decryptPayload(response["EncryptedKey"], response["EncryptedPayload"])
+responsePayload = decryptPayload(base64.b64encode(enc_session_key).decode('utf-8'), response["EncryptedPayload"])
 
 print(f"{r} - {r.text} - {responsePayload}")
 
