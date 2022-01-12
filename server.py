@@ -18,34 +18,63 @@ RSA_KEY_PATH = "mykey.pem"
 HOST = "0.0.0.0"
 PORT = 5000
 
+requiresUID = ["getLatest", "unlockCard"]
+
+expectedUserRecord = {
+    "CardSync_Version" : "0.1.0",
+    "KeyEncryptionType" : "RSA2048",
+    "PayloadEncryptionType" : "AES_CBC_16_16"
+}
+
 app = Flask(__name__)
 
-def downloadCard(user, cardUID, root):
+def downloadCard(user, cardUID, namespace):
+
+    if namespace != "":
+        root = f"Archives/{namespace}/{cardUID}"
+    else:
+        root = f"Archives/{cardUID}"
 
     if not os.path.isdir(root):
-        return (False, f"Card with UID {cardUID} not found on server!")
+        return ["InvalidUID"]
+        #return (False, f"Card with UID {cardUID} not found on server!")
 
     with open(f"{root}/LatestAccess", "r") as f:
         cardUser = f.read()
         if cardUser:
-            return (False, f"Card locked by {cardUser}")
+            return ["CardLocked"]
+            #return (False, f"Card locked by {cardUser}")
         
     
     with open(f"{root}/LatestCard", "rb") as card:
         data = card.read(CARD_SIZE)
         with open(f"{root}/LatestAccess", "w") as f:
             f.write(f"{user}")
-        return (True, data)
+        return ["Ok", {
+            "CardData" : base64.b64encode(data).decode('utf-8')
+        }]
+        #return (True, data)
 
-def uploadCard(user, cardUID, data, root):
+def uploadCard(user, data, namespace):
+
+    cardUID = str(data[0:4].hex()).upper()
+
+    print(f"CardUID: {cardUID}")
+
+    if namespace != "":
+        root = f"Archives/{namespace}/{cardUID}"
+    else:
+        root = f"Archives/{cardUID}"
 
     if not os.path.isdir(root):
-        return (False, f"Card with UID {cardUID} not found on server!")
+        return ["InvalidUID"]
+        #return (False, f"Card with UID {cardUID} not found on server!")
 
     with open(f"{root}/LatestAccess", "r") as f:
         cardUser = f.read()
         if cardUser != user:
-            return(False, f"Must download card before uploading!")
+            return ["CardLocked"]
+            #return(False, f"Must download card before uploading!")
     
     with open(f"{root}/LatestCard", "wb") as latestCard:
         timeStamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -57,12 +86,18 @@ def uploadCard(user, cardUID, data, root):
     with open(f"{root}/LatestAccess", "w") as f:
         pass
 
-    return(True, "Card Uploaded")
+    return ["Ok"]
 
-def unlockCard(user, cardUID, root):
+def unlockCard(user, cardUID, namespace):
+
+    if namespace != "":
+        root = f"Archives/{namespace}/{cardUID}"
+    else:
+        root = f"Archives/{cardUID}"
 
     if not os.path.isdir(root):
-        return (False, f"Card with UID {cardUID} not found on server!")
+        return ["InvalidUID"]
+        #return (False, f"Card with UID {cardUID} not found on server!")
 
     cardUser = open(f"{root}/LatestAccess", "r").read()
     if cardUser == user:
@@ -71,19 +106,13 @@ def unlockCard(user, cardUID, root):
         with open(f"{root}/LatestAccess", "w") as f:
             f.write(f"{user}")
     
+    return ["Ok"]
     return(True, "Card unlocked")
-
 
 functionMatching = {
     "getLatest" : downloadCard,
     "uploadCard" : uploadCard,
     "unlockCard" : unlockCard,
-}
-
-expectedUserRecord = {
-    "CardSync_Version" : "0.1.0",
-    "KeyEncryptionType" : "RSA2048",
-    "PayloadEncryptionType" : "AES_CBC_16_16"
 }
 
 def verifyUser(username, passhash):
@@ -199,27 +228,30 @@ def connection():
         return returnPayload(encryptedKey, "Ok")
 
     #|--- Directive handling
-    l = locals()
-    cardUID = DirectiveArguments["cardUID"]
-    data = base64.b64decode(DirectiveArguments["data"])
-    dev = DirectiveArguments["dev"]
-    if dev == "True":
-        root = f"Archives/dev/{cardUID}"
-    else:
-        root = f"Archives/{cardUID}"
 
+    if directive in requiresUID:
+        cardUID = DirectiveArguments["CardUID"]
+
+    try:
+        namespace = DirectiveArguments["Namespace"]
+    except KeyError:
+        namespace = ""
+
+    if directive == "uploadCard":
+        data = base64.b64decode(DirectiveArguments["CardData"])
+
+    l = locals()
     
     func = functionMatching[directive]
     args = [l[x] for x in list(inspect.signature(func).parameters.keys())]
     
     returnObject = func(*args)
-
     print(returnObject)
-    
-    if returnObject[0]:
-        return(returnObject[1], 200)
-    else: 
-        return(returnObject[1], 400)
+
+    if len(returnObject) == 1:
+        return returnPayload(encryptedKey, returnObject[0])
+    else:
+        return returnPayload(encryptedKey, returnObject[0], returnObject[1])
     
 
 def loadConfig(filepath):

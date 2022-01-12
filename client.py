@@ -63,8 +63,8 @@ print(cardData)
     
 
 DirectiveArguments = {
-    "cardUID" : cardUID, 
-    "data" : cardData,
+    "CardUID" : cardUID, 
+    "CardData" : cardData,
     "dev" : "False"
 }
 
