@@ -58,7 +58,9 @@ headers = {
 }
 
 cardUID = "C40F6C94"
-cardData = base64.b64encode(open(f"Archives/{cardUID}/LatestCard", "rb").read()).decode('utf-8')
+CARDPATH = f"Archives/{cardUID}/LatestCard"
+#CARDPATH = f"../dumps/1kDos.mfd"
+cardData = base64.b64encode(open(CARDPATH, "rb").read()).decode('utf-8')
 print(cardData)
     
 

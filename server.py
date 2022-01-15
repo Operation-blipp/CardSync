@@ -67,14 +67,16 @@ def uploadCard(user, data, namespace):
         root = f"Archives/{cardUID}"
 
     if not os.path.isdir(root):
-        return ["InvalidUID"]
+        os.makedirs(root)
+        print("Registering card..")
+    else:
+        #return ["InvalidUID"]
         #return (False, f"Card with UID {cardUID} not found on server!")
-
-    with open(f"{root}/LatestAccess", "r") as f:
-        cardUser = f.read()
-        if cardUser != user:
-            return ["CardLocked"]
-            #return(False, f"Must download card before uploading!")
+        with open(f"{root}/LatestAccess", "r") as f:
+            cardUser = f.read()
+            if cardUser != user:
+                return ["CardLocked"]
+                #return(False, f"Must download card before uploading!")
     
     with open(f"{root}/LatestCard", "wb") as latestCard:
         timeStamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
