@@ -3,3 +3,5 @@ Archives/
 *.pem
 *.pub
 *.db
+CardSync.log
+/Archives

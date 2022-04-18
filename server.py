@@ -16,7 +16,7 @@ CARD_SIZE = 1024
 DATABASE_NAME = "userdb.db"
 RSA_KEY_PATH = "mykey.pem" 
 HOST = "0.0.0.0"
-PORT = 5000
+PORT = 80
 
 requiresUID = ["getLatest", "unlockCard"]
 
@@ -188,7 +188,7 @@ def returnPayload(encryptedKey, statusCode, directiveResponse=dict()):
 
     ServerEncryptedRecord["EncryptedPayload"] = encryptedPayload
 
-    return ServerEncryptedRecord
+    return json.dumps(ServerEncryptedRecord)
 
 
 
@@ -232,7 +232,7 @@ def connection():
     #|--- Directive handling
 
     if directive in requiresUID:
-        cardUID = DirectiveArguments["CardUID"]
+        cardUID = DirectiveArguments["CardUID"].upper()
 
     try:
         namespace = DirectiveArguments["Namespace"]
