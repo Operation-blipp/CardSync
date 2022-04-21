@@ -31,6 +31,7 @@ app = Flask(__name__)
 
 def downloadCard(user, cardUID, namespace):
 
+    cardUID = cardUID.upper()
     if cardUID == "DEFAULT":
         cardUID = loadConfig(config_path)["DEFAULT"]
 
@@ -39,7 +40,7 @@ def downloadCard(user, cardUID, namespace):
         root = f"Archives/{namespace}/{cardUID}"
     else:
         root = f"Archives/{cardUID}"
-
+    print(root)
     if not os.path.isdir(root):
         return ["InvalidUID"]
         #return (False, f"Card with UID {cardUID} not found on server!")
@@ -97,6 +98,7 @@ def uploadCard(user, data, namespace):
 
 def unlockCard(user, cardUID, namespace):
 
+    cardUID = cardUID.upper()
     if cardUID == "DEFAULT":
         cardUID = loadConfig(config_path)["DEFAULT"]
 
