@@ -17,6 +17,7 @@ DATABASE_NAME = "userdb.db"
 RSA_KEY_PATH = "mykey.pem" 
 HOST = "0.0.0.0"
 PORT = 80
+config_path = "settings.cfg"
 
 requiresUID = ["getLatest", "unlockCard"]
 
@@ -29,6 +30,10 @@ expectedUserRecord = {
 app = Flask(__name__)
 
 def downloadCard(user, cardUID, namespace):
+
+    if cardUID == "DEFAULT":
+        cardUID = loadConfig(config_path)["DEFAULT"]
+
 
     if namespace != "":
         root = f"Archives/{namespace}/{cardUID}"
@@ -91,6 +96,9 @@ def uploadCard(user, data, namespace):
     return ["Ok"]
 
 def unlockCard(user, cardUID, namespace):
+
+    if cardUID == "DEFAULT":
+        cardUID = loadConfig(config_path)["DEFAULT"]
 
     if namespace != "":
         root = f"Archives/{namespace}/{cardUID}"
@@ -171,7 +179,6 @@ def encryptPayload(encryptedKey, userPayload):
 
     return base64.b64encode(encryptedData).decode('utf-8')
 
-
 def returnPayload(encryptedKey, statusCode, directiveResponse=dict()):
 
     ServerEncryptedRecord = {
@@ -189,8 +196,6 @@ def returnPayload(encryptedKey, statusCode, directiveResponse=dict()):
     ServerEncryptedRecord["EncryptedPayload"] = encryptedPayload
 
     return json.dumps(ServerEncryptedRecord)
-
-
 
 @app.route('/', methods=["GET", "POST"])
 def connection():
@@ -255,7 +260,6 @@ def connection():
     else:
         return returnPayload(encryptedKey, returnObject[0], returnObject[1])
     
-
 def loadConfig(filepath):
     
     configData = dict()
@@ -271,8 +275,7 @@ def loadConfig(filepath):
     
     return configData
 
-
-def create_app(config_path="settings.cfg"):
+def create_app(pathToConfig="settings.cfg"):
 
     global app
 
@@ -281,8 +284,11 @@ def create_app(config_path="settings.cfg"):
     global RSA_KEY_PATH
     global HOST
     global PORT
+    global config_path
 
-    config = loadConfig(config_path)
+    config_path = pathToConfig
+
+    config = loadConfig(pathToConfig)
     CARD_SIZE = int(config["CARD_SIZE"])
     DATABASE_NAME = config["DATABASE_NAME"]
     RSA_KEY_PATH = config["RSA_KEY_PATH"]
@@ -290,7 +296,6 @@ def create_app(config_path="settings.cfg"):
     PORT = int(config["PORT"])
 
     return app
-    
 
 if __name__ == "__main__":
 
