@@ -7,3 +7,5 @@ Namespace permission in user database, and serverside check
 Finish protocol
 
 Add clear button for RSA-key field (also paste-button?)
+
+Add different log option modes, verbose and short
