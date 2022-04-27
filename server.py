@@ -121,10 +121,30 @@ def unlockCard(user, cardUID, namespace):
     return ["Ok"]
     return(True, "Card unlocked")
 
+def UploadBlippBugReport(user,DirectiveArguments):
+    try:
+        StackTrace = DirectiveArguments["StackTrace"]
+        Log = DirectiveArguments["Log"]
+        CurrentTime = datetime.strftime(datetime.now(),"%Y-%m-%d_%H-%M-%S")
+        NewFile = open("Archives/bugreports/"+CurrentTime,"x")
+        NewFile.write("----------------STACKTRACE---------------\n")
+        NewFile.write(StackTrace)
+        NewFile.write("------------------LOG--------------------\n")
+        NewFile.write(Log)
+        NewFile.write("-----------------USER--------------------\n")
+        NewFile.write(str(user))
+        NewFile.close()
+    except Exception as e:
+        print(str(e))
+        return(["InvalidDirectiveArguments"])
+    return(["Ok"])
+    
+
 functionMatching = {
     "getLatest" : downloadCard,
     "uploadCard" : uploadCard,
     "unlockCard" : unlockCard,
+    "UploadBlippBugReport":UploadBlippBugReport
 }
 
 def verifyUser(username, passhash):
